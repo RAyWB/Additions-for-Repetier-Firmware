@@ -1497,6 +1497,10 @@ bool Custom_SD_End_Continue(bool intern)
 //##### uses Analog inputs and Analog Joyticks
 //#########################################################################################
 
+//!!!!!!!!!!!!!!!!!!! faulty , does not work with analogRead !!!!!!!!!!!!!!!!!!!!!!!
+//!!!!!!!!!!!!!!!!!!! faulty , does not work with analogRead !!!!!!!!!!!!!!!!!!!!!!!
+//!!!!!!!!!!!!!!!!!!! will be updated soon , needs modification !!!!!!!!!!!!!!!!!!!!!!!
+		    
 void RAyWB_CheckJoystick(uint16_t &action) // assigned to slow action
 {
 //button assignment x-axis
