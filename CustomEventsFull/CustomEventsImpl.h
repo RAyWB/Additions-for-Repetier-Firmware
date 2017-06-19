@@ -64,10 +64,10 @@ float SAFE_Z ;//used for flexible Safe Z-Height on SD Pause
 //#########################################################################################
 //### variables used for extended M401/M402
 //#########################################################################################
-
+/*
 float OFF_X,OFF_Y,OFF_Z =0;
 float MEM_X,MEM_Y,MEM_Z =99999;
-
+*/
 //#########################################################################################
 //##### Initialization, Setup of I2C and Components
 //#########################################################################################
@@ -686,7 +686,7 @@ break;
              Printer::coordinateOffset[Z_AXIS] = Printer::runZProbe(true, true,2, true);
              Printer::coordinateOffset[Z_AXIS] -= (Printer::currentPosition[Z_AXIS]);
              Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE, startheight - Printer::coordinateOffset[Z_AXIS], IGNORE_COORDINATE, Printer::homingFeedrate[Z_AXIS]);
-             Printer::lastCmdPos[Z_AXIS] =Printer::currentPosition[Z_AXIS];// update gcode coords to startheight;
+             Printer::lastCmdPos[Z_AXIS] = Printer::currentPosition[Z_AXIS];// update gcode coords to startheight;
              Com::printFLN(PSTR("Workpiece Z: "), Printer::lastCmdPos[Z_AXIS]+ Printer::coordinateOffset[Z_AXIS]);
              Com::printFLN(PSTR("Machine Z: "), Printer::lastCmdPos[Z_AXIS]);
              break;
@@ -977,22 +977,20 @@ bool Custom_MCode(GCode *com)
 
             case 401: // M401 Memory position
 #if EEPROM_MODE !=0
-       if(com->hasP()){
+        if(com->hasP()){
+             if(HAL::eprGetFloat(EPR_MEM)!=0){
+      
           Commands::waitUntilEndOfAllMoves();
           Printer::updateCurrentPosition(false);
-          Printer::realPosition(MEM_X, MEM_Y, MEM_Z);
-          OFF_X = Printer::coordinateOffset[X_AXIS];
-          OFF_Y = Printer::coordinateOffset[Y_AXIS];
-          OFF_Z = Printer::coordinateOffset[Z_AXIS];
           
-          HAL::eprSetFloat(EPR_MEM_X, MEM_X);
-          HAL::eprSetFloat(EPR_MEM_Y, MEM_Y);
-          HAL::eprSetFloat(EPR_MEM_Z, MEM_Z);
+          HAL::eprSetFloat(EPR_MEM_X, Printer::realXPosition());
+          HAL::eprSetFloat(EPR_MEM_Y, Printer::realYPosition());
+          HAL::eprSetFloat(EPR_MEM_Z, Printer::realZPosition());
 
-          HAL::eprSetFloat(EPR_OFF_X, OFF_X);
-          HAL::eprSetFloat(EPR_OFF_Y, OFF_Y);
-          HAL::eprSetFloat(EPR_OFF_Z, OFF_Z);
-
+          HAL::eprSetFloat(EPR_OFF_X,Printer::coordinateOffset[X_AXIS]);
+          HAL::eprSetFloat(EPR_OFF_Y,Printer::coordinateOffset[Y_AXIS]);
+          HAL::eprSetFloat(EPR_OFF_Z,Printer::coordinateOffset[Z_AXIS]);
+          HAL::eprSetFloat(EPR_MEM, 1);
                
           Com::printF(PSTR("Saved to EEPROM X:"),HAL::eprGetFloat(EPR_MEM_X));
           Com::printF(PSTR("  Y:"),HAL::eprGetFloat(EPR_MEM_Y));
@@ -1001,9 +999,15 @@ bool Custom_MCode(GCode *com)
           Com::printF(PSTR(" OFF  Y:"),HAL::eprGetFloat(EPR_OFF_Y));
           Com::printFLN(PSTR(" OFF  Z:"),HAL::eprGetFloat(EPR_OFF_Z)); 
        }
-#else Com::printErrorF(Com::tNoEEPROMSupport);
+       
+       else
+       Com::printFLN(PSTR("No Memory Position available"));
+       }
+#else  
+       Com::printErrorF(Com::tNoEEPROMSupport);
+       
 #endif
-       else     
+           
             Printer::MemoryPosition();
             break;
 
@@ -1018,23 +1022,19 @@ bool Custom_MCode(GCode *com)
           Com::printF(PSTR("Read from EEPROM OFF X:"),HAL::eprGetFloat(EPR_OFF_X));
           Com::printF(PSTR(" OFF  Y:"),HAL::eprGetFloat(EPR_OFF_Y));
           Com::printFLN(PSTR(" OFF  Z:"),HAL::eprGetFloat(EPR_OFF_Z)); 
-    
-         MEM_X = HAL::eprGetFloat(EPR_MEM_X);
-         MEM_Y = HAL::eprGetFloat(EPR_MEM_Y);
-         MEM_Z = HAL::eprGetFloat(EPR_MEM_Z);
-
-         OFF_X = HAL::eprGetFloat(EPR_OFF_X);
-         OFF_Y = HAL::eprGetFloat(EPR_OFF_Y);
-         OFF_Z = HAL::eprGetFloat(EPR_OFF_Z);
-
-         Printer::coordinateOffset[X_AXIS]= OFF_X;
-         Printer::coordinateOffset[Y_AXIS]= OFF_Y;
-         Printer::coordinateOffset[Z_AXIS]= OFF_Z;
-         Printer::moveToReal(MEM_X, MEM_Y, MEM_Z, IGNORE_COORDINATE, (com->hasF() ? com->F : Printer::feedrate));
-         Printer::lastCmdPos[X_AXIS] = Printer::currentPosition[X_AXIS];// update gcode coords to startheight;
-         Printer::lastCmdPos[Y_AXIS] = Printer::currentPosition[Y_AXIS];// update gcode coords to startheight;
-         Printer::lastCmdPos[Z_AXIS] = Printer::currentPosition[Z_AXIS];// update gcode coords to startheight;
-         Com::printFLN(PSTR("Positions restored")); 
+          Printer::coordinateOffset[X_AXIS]= HAL::eprGetFloat(EPR_OFF_X);
+          Printer::coordinateOffset[Y_AXIS]= HAL::eprGetFloat(EPR_OFF_Y);
+          Printer::coordinateOffset[Z_AXIS]= HAL::eprGetFloat(EPR_OFF_Z);
+          Printer::moveToReal(HAL::eprGetFloat(EPR_MEM_X), HAL::eprGetFloat(EPR_MEM_Y), HAL::eprGetFloat(EPR_MEM_Z), IGNORE_COORDINATE, (com->hasF() ? com->F : Printer::feedrate));
+          Printer::lastCmdPos[X_AXIS] = Printer::currentPosition[X_AXIS];// update gcode coords to startheight;
+          Printer::lastCmdPos[Y_AXIS] = Printer::currentPosition[Y_AXIS];// update gcode coords to startheight;
+          Printer::lastCmdPos[Z_AXIS] = Printer::currentPosition[Z_AXIS];// update gcode coords to startheight;
+          Com::printFLN(PSTR("Positions restored")); 
+       }
+          if(com->hasD()){
+          HAL::eprSetFloat(EPR_MEM, 0);
+          Com::printFLN(PSTR("Positions deleted"));
+          break;
          }
 #else Com::printErrorF(Com::tNoEEPROMSupport);
 #endif
