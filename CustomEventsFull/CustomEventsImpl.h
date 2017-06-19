@@ -568,7 +568,13 @@ void Custom_500MS()
 #endif // defined
 break;
 
-
+//#########################################################################################
+//#### modified G30
+//#### G30 C to calibrate tool height
+//#### G30 T (prototype for M6 ) adjust height when tool changed
+//#### G30 L<value> probes Z and Lifts Z by <value>
+///#########################################################################################
+ 
      case 30: 
       {   // G30 [Pn] [S]
         // G30 (the same as G30 P3) single probe set Z0
@@ -579,23 +585,16 @@ break;
    {
         if (com->hasC()) // G30 Calibrate
            {
-             //EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN,2);
              ELECTRODE_CLOSE;
              Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE,Printer::lastCmdPos[Z_AXIS]+50, IGNORE_COORDINATE, Printer::homingFeedrate[Z_AXIS]); //lift z 50mm
              Printer::moveToReal(MEAS_XPOS,MEAS_YPOS,IGNORE_COORDINATE, IGNORE_COORDINATE, 2500); // move to probe point
-             
              Length= Printer::runZProbe(true, true,2, true);  //probe
              measured = true;
              Commands::waitUntilEndOfAllMoves();
-             //EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN, 90); // release electrode servo
              ELECTRODE_OPEN;
              Com::printFLN(PSTR("Tool 1: "),Length,3);
              ELECTRODE_OFF;
-             /*
-             HAL::delayMilliseconds(500);//wait for servo moved before switch off
-             EXTPWM1.SetPWM(SERVO_ELECTRODE_PIN, 0,0);//switch servo off
-             EXTPWM1.SetFREQ(PWM_FREQU);//restore frequency
-             */break;
+             break;
            }
         
        if (com->hasT()) //G30 Toolchange  PROTOTYPE for M6
@@ -607,21 +606,15 @@ break;
 
             if ((!measured) || (Length==0))
             {
-             
-             //EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN,2); //activate electrode Servo
              ELECTRODE_CLOSE;
              Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE,Printer::lastCmdPos[Z_AXIS]+50, IGNORE_COORDINATE, Printer::homingFeedrate[Z_AXIS]); //lift z 50mm
              Printer::moveToReal(MEAS_XPOS,MEAS_YPOS,IGNORE_COORDINATE, IGNORE_COORDINATE, 2500); // move to probe point
-             
              Length= Printer::runZProbe(true, true,2, true);  //probe
              measured = true; //set flag
              Commands::waitUntilEndOfAllMoves();
              ELECTRODE_OPEN;
-             //EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN, 90); // release electrode servo
-  
             }
              Com::printFLN(PSTR("Tool 1: "),Length,3); //#### Info 
-
              Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE,Printer::lastCmdPos[Z_AXIS]+50, IGNORE_COORDINATE, Printer::homingFeedrate[Z_AXIS]); //lift z
              Printer::moveToReal(MEAS_XPOS,MEAS_YPOS,IGNORE_COORDINATE, IGNORE_COORDINATE, 2500); // move to probe point
             
@@ -637,32 +630,22 @@ break;
          Printer::defaultLoopActions();
         }
 
-           ELECTRODE_CLOSE;
-           //EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN, 2); // activate electrode
-             
+             ELECTRODE_CLOSE;
              float NewLength= Printer::runZProbe(true, true,2, true);//measure new tool
-            
              Commands::waitUntilEndOfAllMoves();
              Com::printFLN(PSTR("Tool 2: "),NewLength,3);//#### Info 
              float diff = NewLength-Length;      // calculate difference       
              Com::printFLN(PSTR("offset: "),diff,3);//#### Info 
-
              Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE,Printer::lastCmdPos[Z_AXIS]-diff+50, IGNORE_COORDINATE, Printer::homingFeedrate[Z_AXIS]);// lift z
              Printer::moveToReal(Printer::lastCmdPos[X_AXIS],Printer::lastCmdPos[Y_AXIS],IGNORE_COORDINATE, IGNORE_COORDINATE, 2500);// move back to workpiece
              Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE,Printer::lastCmdPos[Z_AXIS]-diff, IGNORE_COORDINATE, Printer::homingFeedrate[Z_AXIS]);// move z to corrected origin
-           
              Printer::lastCmdPos[Z_AXIS] = Printer::currentPosition[Z_AXIS];// update gcode coords to startheight;
              Printer::coordinateOffset[Z_AXIS] += diff;//add difference to OrigOff
              Com::printFLN(PSTR("Workpiece Z: "), Printer::lastCmdPos[Z_AXIS] + Printer::coordinateOffset[Z_AXIS]);//#### Info 
              Com::printFLN(PSTR("Machine Z: "), Printer::lastCmdPos[Z_AXIS]);//#### Info 
-          ELECTRODE_OPEN;       
-          //EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN, 90);// deactivate electrode
-          //HAL::delayMilliseconds(500);//wait for servo moved before switch off
-          //EXTPWM1.SetPWM(SERVO_ELECTRODE_PIN, 0,0);//switch servo off
-          //EXTPWM1.SetFREQ(PWM_FREQU);//restore frequency
-          ELECTRODE_OFF;
+             ELECTRODE_OPEN;       
+             ELECTRODE_OFF;
              Length = NewLength; // actual length of flute is now saved for next tool change
-      
              Printer::setBlockingReceive(false);
              break;
            }
@@ -725,6 +708,10 @@ bool Custom_MCode(GCode *com)
   
   switch(com->M) {
 
+//#########################################################################################
+//#### modified M3   to handle Gamma correction and Limits
+//#########################################################################################
+
               case 3: // Spindle/laser on
 #if defined(SUPPORT_LASER) && SUPPORT_LASER
             if(Printer::mode == PRINTER_MODE_LASER) {
@@ -761,12 +748,15 @@ bool Custom_MCode(GCode *com)
             }
 #endif // defined
             break;
-//##########
+
+            
+//############## additional command M6 ################################
+//######  !!!Tool change including measuring Tool length!!!
+//######        Auto adjusts drills/flutes Z-Position 
+//#####################################################################
+  
   case 6: 
-  /*  !!!Tool change including measuring Tool length!!!
-   *  !!!adjusts drills/flutes Z-Position 
-   */
-   #if defined(SUPPORT_CNC) && SUPPORT_CNC && defined(M6_ACK_PIN) && (M6_ACK_PIN>=0)
+  #if defined(SUPPORT_CNC) && SUPPORT_CNC && defined(M6_ACK_PIN) && (M6_ACK_PIN>=0)
    
       if (Printer::mode == PRINTER_MODE_CNC) 
       { M6_Message=true;
@@ -781,24 +771,21 @@ bool Custom_MCode(GCode *com)
             sprintf(UI_Message,"Toolchange ");
             Com::printFLN("Toolchange ");
            }
-             CNCDriver::spindleOff();
-             Printer::setBlockingReceive(true);
-             Commands::waitUntilEndOfAllMoves();
+         CNCDriver::spindleOff();
+         Printer::setBlockingReceive(true);
+         Commands::waitUntilEndOfAllMoves();
              
                          
-             float OrigOff=Printer::realZPosition()+Printer::coordinateOffset[Z_AXIS];
-             Com::printFLN(PSTR("orig_off: "),OrigOff);
-             float ZchangePos=Printer::lastCmdPos[Z_AXIS]+50;
-			 
-           EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN,2);  //activate electrode Servo
-           HAL::delayMilliseconds(500);
+         float OrigOff=Printer::realZPosition()+Printer::coordinateOffset[Z_AXIS];
+         Com::printFLN(PSTR("orig_off: "),OrigOff);
+         float ZchangePos=Printer::lastCmdPos[Z_AXIS]+50;
 
-            if ((!measured) || (Length==0))
+			   ELECTRODE_CLOSE;
+           if ((!measured) || (Length==0))
             {
-                         
-            sprintf(UI_Message,"measuring Tool");
-            Com::printFLN(PSTR("measuring Tool"));
-            Com::printFLN(PSTR("on Progress"));
+             sprintf(UI_Message,"measuring Tool");
+             Com::printFLN(PSTR("measuring Tool"));
+             Com::printFLN(PSTR("on Progress"));
                                        
              Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE,ZchangePos, IGNORE_COORDINATE, Printer::maxFeedrate[Z_AXIS]); //lift z 
              Printer::moveToReal(MEAS_XPOS,MEAS_YPOS,IGNORE_COORDINATE, IGNORE_COORDINATE, 3500); // move to probe point
@@ -806,18 +793,17 @@ bool Custom_MCode(GCode *com)
              Length = Printer::runZProbe(true, true,4, true);  //probe
              measured = true;
              Commands::waitUntilEndOfAllMoves();
-             EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN, 90); // release electrode servo
-  
+             ELECTRODE_OPEN;
             }
-             Com::printFLN(PSTR("actual length: "),Length,3);
+         Com::printFLN(PSTR("actual length: "),Length,3);
 
-             Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE, ZchangePos, IGNORE_COORDINATE, Printer::maxFeedrate[Z_AXIS]); //lift z
-             Printer::moveToReal(MEAS_XPOS,MEAS_YPOS, IGNORE_COORDINATE, IGNORE_COORDINATE, Printer::maxFeedrate[X_AXIS]); // move to probe point
-           
-            sprintf(UI_Message,"ch. Tool,OK to cont.");
-            Com::printFLN(PSTR("change Tool now"));
-            Com::printFLN(PSTR("OK to continue"));
-         
+         Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE, ZchangePos, IGNORE_COORDINATE, Printer::maxFeedrate[Z_AXIS]); //lift z
+         Printer::moveToReal(MEAS_XPOS,MEAS_YPOS, IGNORE_COORDINATE, IGNORE_COORDINATE, Printer::maxFeedrate[X_AXIS]); // move to probe point
+          
+         sprintf(UI_Message,"ch. Tool,OK to cont.");
+         Com::printFLN(PSTR("change Tool now"));
+         Com::printFLN(PSTR("OK to continue"));
+        
         while (!CONTINUE)
 
         /*  wait for acknowledge button pressed !! no release by uiaction , no possibility to release from host
@@ -830,53 +816,46 @@ bool Custom_MCode(GCode *com)
          Printer::defaultLoopActions();
         }
 
-          EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN, 2); // activate electrode
-          HAL::delayMilliseconds(500);
-            sprintf(UI_Message,"measuring new Tool");
-            Com::printFLN(PSTR("measuring new Tool"));
-            Com::printFLN(PSTR("on Progress"));
+         ELECTRODE_CLOSE;  
+         sprintf(UI_Message,"measuring new Tool");
+         Com::printFLN(PSTR("measuring new Tool"));
+         Com::printFLN(PSTR("on Progress"));
                          
-             float NewLength = Printer::runZProbe(true, true,4, true);//measure new tool
-            
-             Commands::waitUntilEndOfAllMoves();
-             Com::printFLN(PSTR("new length: "),NewLength,3);//#### Info 
-             float diff = NewLength-Length;      // calculate difference       
-             Com::printFLN(PSTR("tool offset: "),diff,3);//#### Info 
-
-             Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE, ZchangePos-diff, IGNORE_COORDINATE, Printer::maxFeedrate[Z_AXIS]);// lift z
-             Printer::moveToReal(Printer::lastCmdPos[X_AXIS], Printer::lastCmdPos[Y_AXIS], IGNORE_COORDINATE, IGNORE_COORDINATE, Printer::maxFeedrate[X_AXIS]);// move back to workpiece
-             Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE, Printer::lastCmdPos[Z_AXIS] - diff, IGNORE_COORDINATE, Printer::maxFeedrate[Z_AXIS]);// move z to corrected origin
-           
-             Printer::lastCmdPos[Z_AXIS] = Printer::currentPosition[Z_AXIS];// update gcode coords to startheight;
-             Printer::coordinateOffset[Z_AXIS] += diff;//OrigOff;//<-----
-            
-             Com::printFLN(PSTR("Workpiece Z: "), Printer::lastCmdPos[Z_AXIS] + Printer::coordinateOffset[Z_AXIS]);//#### Info 
-             Com::printFLN(PSTR("Machine Z: "), Printer::lastCmdPos[Z_AXIS]);//#### Info 
-            
-                     
-          EXTPWM1.SetSERVO(SERVO_ELECTRODE_PIN, 90);// deactivate electrode
-          HAL::delayMilliseconds(1000);//wait for servo moved before switch off
-          EXTPWM1.SetPWM(SERVO_ELECTRODE_PIN, 0,0);//switch servo off
-          EXTPWM1.SetFREQ(PWM_FREQU);
-       
-        Length = NewLength; // actual length of flute is now saved for next tool change
-
-        Printer::setBlockingReceive(false);
-        Com::printFLN(PSTR("Toolchange done"));
-        sprintf(UI_Message,"Toolchange done");
-           
-       }
+         float NewLength = Printer::runZProbe(true, true,4, true);//measure new tool
+          
+         Commands::waitUntilEndOfAllMoves();
+         Com::printFLN(PSTR("new length: "),NewLength,3);//#### Info 
+         float diff = NewLength-Length;      // calculate difference       
+         Com::printFLN(PSTR("tool offset: "),diff,3);//#### Info 
+         Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE, ZchangePos-diff, IGNORE_COORDINATE, Printer::maxFeedrate[Z_AXIS]);// lift z
+         Printer::moveToReal(Printer::lastCmdPos[X_AXIS], Printer::lastCmdPos[Y_AXIS], IGNORE_COORDINATE, IGNORE_COORDINATE, Printer::maxFeedrate[X_AXIS]);// move back to workpiece
+         Printer::moveToReal(IGNORE_COORDINATE, IGNORE_COORDINATE, Printer::lastCmdPos[Z_AXIS] - diff, IGNORE_COORDINATE, Printer::maxFeedrate[Z_AXIS]);// move z to corrected origin
+         Printer::lastCmdPos[Z_AXIS] = Printer::currentPosition[Z_AXIS];// update gcode coords to startheight;
+         Printer::coordinateOffset[Z_AXIS] += diff;//OrigOff;//<-----
+         Com::printFLN(PSTR("Workpiece Z: "), Printer::lastCmdPos[Z_AXIS] + Printer::coordinateOffset[Z_AXIS]);//#### Info 
+         Com::printFLN(PSTR("Machine Z: "), Printer::lastCmdPos[Z_AXIS]);//#### Info 
+         ELECTRODE_OPEN;
+         ELECTRODE_OFF;
+         Length = NewLength; // actual length of flute is now saved for next tool change
+         Printer::setBlockingReceive(false);
+         Com::printFLN(PSTR("Toolchange done"));
+         sprintf(UI_Message,"Toolchange done");
+      }
 #else
       Com::printFLN(PSTR(("M6 not handled"));
 #endif // defined
         M6_Message = false;
       break;
 
+//############## extended M25 ################################
 
-  case 24: //M24 - Start SD print
-             sd.startPrint();
-             Com::printFLN(PSTR("(re)started from Host"));  
+        case 24: //M24 - Start SD print
+            sd.startPrint();
+            Com::printFLN(PSTR("(re)started from Host"));  
             break;
+
+//############## extended M25 ################################
+
         case 25: //M25 - Pause SD print
             sd.pausePrint();
             Com::printFLN(PSTR("paused from Host"));  
@@ -947,7 +926,12 @@ bool Custom_MCode(GCode *com)
                     }
             }
             break;
-                  case 114: // M114
+        
+        
+//############## extended M114 ####################################
+//##### returns Machine coordinates and workpiece coordinates
+//#################################################################        
+        case 114: // M114
             Com::writeToAll = false;
             Com::printFLN(PSTR("Coords"));
             Commands::printCurrentPosition();
@@ -955,15 +939,16 @@ bool Custom_MCode(GCode *com)
             Com::printF(PSTR("Xm:"),Printer::realXPosition());
             Com::printF(PSTR(" Ym:"),Printer::realYPosition());
             Com::printFLN(PSTR(" Zm:"),Printer::realZPosition());
-            
-      if(com->hasS() && com->S) {
-        Com::printF(PSTR("XS:"),Printer::currentPositionSteps[X_AXIS]);
-        Com::printF(PSTR(" YS:"),Printer::currentPositionSteps[Y_AXIS]);
-        Com::printFLN(PSTR(" ZS:"),Printer::currentPositionSteps[Z_AXIS]);
-      }
-        break;    
-//############## extended M401 /402 ################################
-// allows saving /restoring current position and G92 Offsets
+         if(com->hasS() && com->S) {
+          Com::printF(PSTR("XS:"),Printer::currentPositionSteps[X_AXIS]);
+          Com::printF(PSTR(" YS:"),Printer::currentPositionSteps[Y_AXIS]);
+          Com::printFLN(PSTR(" ZS:"),Printer::currentPositionSteps[Z_AXIS]);
+          }
+            break; 
+
+               
+//############## extended M401 ###############################
+// allows saving  current position and G92 Offsets
 // use : M401 : Standard implementation save to Ram 
 //       M401 P : save to EEPROM
 //############################################################
@@ -1004,6 +989,11 @@ bool Custom_MCode(GCode *com)
             Printer::MemoryPosition();
             break;
 
+//############## extended M402 ###############################
+// allows restoring current position and G92 Offsets
+// use : M402 : Standard implementation restore from Ram 
+//       M402 P : Restore from EEPROM
+//############################################################
 
             
             case 402: // M402 Go to stored position
