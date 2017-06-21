@@ -138,7 +138,8 @@ bool Custom_MCode(GCode *com)
 
               }
          }
-         #else Com::printErrorF(Com::tNoEEPROMSupport);
+         #else 
+         Com::printErrorF(Com::tNoEEPROMSupport);
          #endif
 
     break; //end  480
@@ -185,7 +186,8 @@ bool Custom_MCode(GCode *com)
 
             }
          }
-         #else Com::printErrorF(Com::tNoEEPROMSupport);
+         #else 
+         Com::printErrorF(Com::tNoEEPROMSupport);
          #endif
 
     break;  //end 481
@@ -250,7 +252,8 @@ bool Custom_MCode(GCode *com)
 
             }
          }
-         #else Com::printErrorF(Com::tNoEEPROMSupport);
+         #else 
+         Com::printErrorF(Com::tNoEEPROMSupport);
          #endif
       break;  //end 482
 //-----------------------------------------------------------------------------------------------------------------------
@@ -290,7 +293,7 @@ void Emergency_PowerOff_loop()                               // should run each 
     HAL::eprSetFloat(epr_Backup_OffsetY,Printer::coordinateOffset[Y_AXIS]);
     HAL::eprSetFloat(epr_Backup_OffsetZ,Printer::coordinateOffset[Z_AXIS]);
 
-    for(int i=0;i<=21;i++)                                   //backup selected sd filename
+    for(int i=0;i<20;i++)                                   //backup selected sd filename
     {HAL::eprSetByte(epr_BackupSDfilename+i,Printer::printName[i]);}
 
     HAL::eprSetByte(epr_EmergencyByte,1);     //set emergency byte to 1
@@ -312,7 +315,7 @@ void Emergency_Restore_IfNeeded(){                     //restore print if needed
 
   if(HAL::eprGetByte(epr_EmergencyByte)==1){                         //if emergency powered off detected
 
-      for(int i=0;i<=21;i++)                                                  //restore sd file name
+      for(int i=0;i<20;i++)                     //restore sd file name
       {Printer::printName[i]=HAL::eprGetByte(epr_BackupSDfilename+i);}
 
       sd.setIndex(HAL::eprGetInt32(epr_BackupSDposition));                                      // restore other variables

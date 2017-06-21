@@ -96,10 +96,10 @@ extern void Emergency_PowerOff_loop();
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 //G and M code replacements and /or additional
-#undef EVENT_UNHANDLED_G_CODE(c)
+#undef EVENT_UNHANDLED_G_CODE
 #define EVENT_UNHANDLED_G_CODE(c) Custom_GCode(c)
 
-#undef EVENT_UNHANDLED_M_CODE(c)
+#undef EVENT_UNHANDLED_M_CODE
 #define EVENT_UNHANDLED_M_CODE(c) Custom_MCode(c)
 
 
