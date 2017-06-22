@@ -85,9 +85,13 @@ extern void Emergency_PowerOff_loop();
 #define epr_Backup_OffsetX          1296
 #define epr_Backup_OffsetY          1300
 #define epr_Backup_OffsetZ          1304
+#define epr_Backup_MEMX             1308
+#define epr_Backup_MEMY             1312
+#define epr_Backup_MEMZ             1316
 
 
-#define epr_BackupSDfilename        1308    //position of the first byte of the sd filename ,this will take positions to ~1330
+
+#define epr_BackupSDfilename        1320   //position of the first byte of the sd filename ,this will take positions to ~1330
 
 
 

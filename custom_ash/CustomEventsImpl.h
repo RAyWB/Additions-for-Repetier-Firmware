@@ -294,6 +294,10 @@ void Emergency_PowerOff_loop()                               // should run each 
     HAL::eprSetFloat(epr_Backup_OffsetY,Printer::coordinateOffset[Y_AXIS]);
     HAL::eprSetFloat(epr_Backup_OffsetZ,Printer::coordinateOffset[Z_AXIS]);
 
+    HAL::eprSetFloat(epr_Backup_MEMX,Printer::lastCmdPos[X_AXIS]);                   //backup offset values to eeprom
+    HAL::eprSetFloat(epr_Backup_MEMY,Printer::lastCmdPos[Y_AXIS]);
+    HAL::eprSetFloat(epr_Backup_MEMZ,Printer::lastCmdPos[Z_AXIS]);
+   
     for(int i=0;i<20;i++)                                   //backup selected sd filename
     {HAL::eprSetByte(epr_BackupSDfilename+i,Printer::printName[i]);}
 
@@ -345,7 +349,7 @@ void Emergency_Restore_IfNeeded(){                     //restore print if needed
 
       Printer::setMenuMode(MENU_MODE_PAUSED+MENU_MODE_SD_PRINTING,true);    //set the printer as it is printing and paused to enable the continue option in the menu
      
-      Printer::moveToReal(HAL::eprGetFloat(epr_Backup_OffsetX), HAL::eprGetFloat(epr_Backup_OffsetY), HAL::eprGetFloat(epr_Backup_OffsetZ), IGNORE_COORDINATE, Printer::feedrate);
+      Printer::moveToReal(HAL::eprGetFloat(epr_Backup_MEMX), HAL::eprGetFloat(epr_Backup_MEMY), HAL::eprGetFloat(epr_Backup_MEMZ), IGNORE_COORDINATE, Printer::feedrate);
       Printer::lastCmdPos[X_AXIS] = Printer::currentPosition[X_AXIS];// update gcode coords 
       Printer::lastCmdPos[Y_AXIS] = Printer::currentPosition[Y_AXIS];// update gcode coords 
       Printer::lastCmdPos[Z_AXIS] = Printer::currentPosition[Z_AXIS];// update gcode coords 
