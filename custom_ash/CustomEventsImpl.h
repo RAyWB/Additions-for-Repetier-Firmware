@@ -273,15 +273,16 @@ bool Custom_MCode(GCode *com)
 
 
 void Custom_100MS(){
-  Emergency_PowerOff_loop();
+  if(HAL::eprGetByte(epr_EmergencyByte)==0)     //##ray
+  {Emergency_PowerOff_loop();}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 void Emergency_PowerOff_loop()                               // should run each 100MS
 {if (digitalRead(EmergencyOff_PIN)==Emergency_Trigger_on) {  //if power off triggerd (pin set to low)
   if (sd.sdactive) {                                 //if printing from sd
-    Printer::kill(false);                //kill all ("false" mean kill all not only steppers)
-
+//    Printer::kill(false);                //kill all ("false" mean kill all not only steppers)
+  
     HAL::eprSetFloat(epr_BackupFeedrate,Printer::feedrate);                          //backup all variables
     HAL::eprSetInt32(epr_BackupSDposition,sd.sdpos);
     HAL::eprSetFloat(epr_BackupExId,Extruder::current->id);
@@ -297,6 +298,9 @@ void Emergency_PowerOff_loop()                               // should run each 
     {HAL::eprSetByte(epr_BackupSDfilename+i,Printer::printName[i]);}
 
     HAL::eprSetByte(epr_EmergencyByte,1);     //set emergency byte to 1
+    sd.stopPrint(); 
+ //   Printer::kill(false);                //kill all ("false" mean kill all not only steppers)
+
     }
   else HAL::eprSetByte(epr_EmergencyByte,0);           // if the printer is not printing just set emergency byte to 0
   }
@@ -304,7 +308,7 @@ void Emergency_PowerOff_loop()                               // should run each 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Custom_INTIALIZE(){
-  pinMode(EmergencyOff_PIN,OUTPUT);
+  pinMode(EmergencyOff_PIN,INPUT);
   Emergency_Restore_IfNeeded();
 
 }
@@ -313,8 +317,11 @@ void Custom_INTIALIZE(){
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 void Emergency_Restore_IfNeeded(){                     //restore print if needed //should run on start
 
-  if(HAL::eprGetByte(epr_EmergencyByte)==1){                         //if emergency powered off detected
+  if(HAL::eprGetByte(epr_EmergencyByte)==1){   //if emergency powered off detected
 
+      sd.mount();
+    //  sd.initsd();
+    
       for(int i=0;i<20;i++)                     //restore sd file name
       {Printer::printName[i]=HAL::eprGetByte(epr_BackupSDfilename+i);}
 
@@ -339,10 +346,9 @@ void Emergency_Restore_IfNeeded(){                     //restore print if needed
       Printer::setMenuMode(MENU_MODE_PAUSED+MENU_MODE_SD_PRINTING,true);    //set the printer as it is printing and paused to enable the continue option in the menu
      
       Printer::moveToReal(HAL::eprGetFloat(epr_Backup_OffsetX), HAL::eprGetFloat(epr_Backup_OffsetY), HAL::eprGetFloat(epr_Backup_OffsetZ), IGNORE_COORDINATE, Printer::feedrate);
-      Printer::lastCmdPos[X_AXIS] = Printer::currentPosition[X_AXIS];// update gcode coords to startheight;
-      Printer::lastCmdPos[Y_AXIS] = Printer::currentPosition[Y_AXIS];// update gcode coords to startheight;
-      Printer::lastCmdPos[Z_AXIS] = Printer::currentPosition[Z_AXIS];// update gcode coords to startheight;
-        
+      Printer::lastCmdPos[X_AXIS] = Printer::currentPosition[X_AXIS];// update gcode coords 
+      Printer::lastCmdPos[Y_AXIS] = Printer::currentPosition[Y_AXIS];// update gcode coords 
+      Printer::lastCmdPos[Z_AXIS] = Printer::currentPosition[Z_AXIS];// update gcode coords 
 
   }
 }
