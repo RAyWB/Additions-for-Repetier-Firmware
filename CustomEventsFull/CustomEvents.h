@@ -166,7 +166,7 @@ extern void RAyWB_CheckJoystick(int &action) ;
 extern void RAyWB_CheckJoystick2() ;
 
 
-
+/*  under construction
 // replace the pins which go to external PWM
 // and replace by Single PWM PIN which is NOT used
 #undef HEATER_0_PIN
@@ -184,7 +184,7 @@ extern void RAyWB_CheckJoystick2() ;
 #define FAN_PIN 9
 #define FAN2_PIN 9
 //#define FAN_BOARD_PIN 9
-
+*/
 
 // replace original stuff
 #undef EVENT_UI_EXECUTE
