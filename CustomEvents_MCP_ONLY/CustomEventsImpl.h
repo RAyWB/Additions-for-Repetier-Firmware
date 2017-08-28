@@ -46,6 +46,7 @@ HAL::i2cInit(400000);  // usually 100000 Hz  , my setup works on 400000Hz
 #endif  
 
   MCP1.Init();
+  MCP2.Init();
  
 }
 
