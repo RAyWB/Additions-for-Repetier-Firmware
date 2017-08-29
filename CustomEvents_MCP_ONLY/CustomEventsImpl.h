@@ -28,7 +28,6 @@
 
 MCP23017 MCP1(0x24);  
 MCP23017 MCP2(0x25);  
-MCP23017 MCP3(0x20);  
 
 // if you are not shure about the I2C Adresss of your components run Nick Gammon´s I2C Scanner
 // see:  http://www.gammon.com.au/i2c
@@ -47,7 +46,7 @@ HAL::i2cInit(400000);  // usually 100000 Hz  , my setup works on 400000Hz
 
   MCP1.Init();
   MCP2.Init();
-  MCP3.Init();
+
  
 }
 
@@ -166,6 +165,118 @@ uint16_t MCP23017::readRegister(uint16_t regAddress) {
 
 // End MCP23017
 
+//#########################################################################################
+//###  User defined Events
+//#########################################################################################
+
+int Custom_Execute(int action,bool allowMoves) 
+{
+            
+  switch(action) {
+
+    
+  
+   case UI_ACTION_IDENT01:
+           Com::printFLN(PSTR("This is 1"));
+           break;
+   case UI_ACTION_IDENT02:
+           Com::printFLN(PSTR("This is 2"));
+           break;
+   case UI_ACTION_IDENT03:
+           Com::printFLN(PSTR("This is 3"));
+           break;
+   case UI_ACTION_IDENT04:
+           Com::printFLN(PSTR("This is 4"));
+           break;
+   case UI_ACTION_IDENT05:
+           Com::printFLN(PSTR("This is 5"));
+           break;
+   case UI_ACTION_IDENT06:
+           Com::printFLN(PSTR("This is 6"));
+           break;
+   case UI_ACTION_IDENT07:
+           Com::printFLN(PSTR("This is 7"));
+           break;
+   case UI_ACTION_IDENT08:
+           Com::printFLN(PSTR("This is 8"));
+           break;
+   case UI_ACTION_IDENT09:
+           Com::printFLN(PSTR("This is 9"));
+           break;
+   case UI_ACTION_IDENT10:
+           Com::printFLN(PSTR("This is 10"));
+           break;
+   case UI_ACTION_IDENT11:
+           Com::printFLN(PSTR("This is 11"));
+           break;
+   case UI_ACTION_IDENT12:
+           Com::printFLN(PSTR("This is 12"));
+           break;
+   case UI_ACTION_IDENT13:
+           Com::printFLN(PSTR("This is 13"));
+           break;
+   case UI_ACTION_IDENT14:
+           Com::printFLN(PSTR("This is 14"));
+           break;
+   case UI_ACTION_IDENT15:
+           Com::printFLN(PSTR("This is 15"));
+           break;
+   case UI_ACTION_IDENT16:
+           Com::printFLN(PSTR("This is 16"));
+           break;
+   case UI_ACTION_IDENTM01:
+           Com::printFLN(PSTR("This is Button 1"));
+           break;
+   case UI_ACTION_IDENTM02:
+           Com::printFLN(PSTR("This is Button 2"));
+           break;              
+   case UI_ACTION_IDENTM03:
+           Com::printFLN(PSTR("This is Button 3"));
+           break;
+   case UI_ACTION_IDENTM04:
+           Com::printFLN(PSTR("This is Button 4"));
+           break;      
+   case UI_ACTION_IDENTM05:
+           Com::printFLN(PSTR("This is Button 5"));
+           break;  
+   case UI_ACTION_IDENTM06:
+           Com::printFLN(PSTR("This is Button 6"));
+           break;  
+   case UI_ACTION_IDENTM07:
+           Com::printFLN(PSTR("This is Button 7"));
+           break; 
+   case UI_ACTION_IDENTM08:
+           Com::printFLN(PSTR("This is Button 8"));
+           break;
+   case UI_ACTION_IDENTM09:
+           Com::printFLN(PSTR("This is Button 9"));
+           break;
+   case UI_ACTION_IDENTM10:
+           Com::printFLN(PSTR("This is Button 10"));
+           break;
+   case UI_ACTION_IDENTM11:
+           Com::printFLN(PSTR("This is Button 11"));
+           break;
+   case UI_ACTION_IDENTM12:
+           Com::printFLN(PSTR("This is Button 12"));
+           break;
+   case UI_ACTION_IDENTM13:
+           Com::printFLN(PSTR("This is Button 13"));
+           break;
+   case UI_ACTION_IDENTM14:
+           Com::printFLN(PSTR("This is Button 14"));
+           break;
+   case UI_ACTION_IDENTM15:
+           Com::printFLN(PSTR("This is Button 15"));
+           break;
+   case UI_ACTION_IDENTM16:
+           Com::printFLN(PSTR("This is Button 16"));
+           break;
+       
+}
+return 0 ;
+}//Custom_Execute
+
 
 //#########################################################################################
 //#### Read buttons from MCP23017 external I2C device(s)  
@@ -181,52 +292,128 @@ int Custom_CheckSlowKeys()
   {
 	 uint16_t buttonval = 0xFFFF-MCP1.ReadPort();
 	 uint16_t buttonval2 = 0xFFFF-MCP2.ReadPort();
-	 uint16_t buttonval3 = 0xFFFF-MCP3.ReadPort();
-	    
+    
 switch (buttonval) {
 
-      
-      case 1:       Com::print(" MCP1 Button1\n");
+  
+      //B0     
+      case 1:       action=UI_ACTION_IDENTM01;
                     break;
-            
-      case 2:       Com::print(" MCP1 Button2\n");
+      //B1
+      case 2:       action=UI_ACTION_IDENTM02;
+                    break;   
+      //B2
+      case 4:       action=UI_ACTION_IDENTM03;
+                    break;       
+      //B3
+      case 8:       action=UI_ACTION_IDENTM04;
+                    break; 
+      //B4            
+      case 16:      action=UI_ACTION_IDENTM05;
+                    break;       
+      //B5
+      case 32:      action=UI_ACTION_IDENTM06;
                     break;
-   
-// and so on 
-   
+      //B6
+      case 64:      action=UI_ACTION_IDENTM07;
+                    break;
+      //B7      
+      case 128:     action=UI_ACTION_IDENTM08;
+                    break;
+     
+      case 256:     action=UI_ACTION_IDENTM09;
+                    break; 
+      //A1          
+      case 512:     action=UI_ACTION_IDENTM10;
+                    break;
+      //A2
+      case 1024:    action=UI_ACTION_IDENTM11;
+                    break;
+      //A3         
+      case 2048:    action=UI_ACTION_IDENTM12;
+                    break;      
+      //A4
+      case 4096:    action=UI_ACTION_IDENTM13;
+                    break;
+      //A5           
+      case 8192:    action=UI_ACTION_IDENTM14;
+                    break;      
+      //A6
+      case 16384:   action=UI_ACTION_IDENTM15;
+                    break;
+      //A7      
+      case 32768:   action=UI_ACTION_IDENTM16;
+                    break;
+
       default: 
-                    Com::print(" MCP1 no Button\n");
+
+                    //Com::print(" MCP1 no Button\n");
                     break;
    }
    
 switch (buttonval2) {
   
-      case 1:       Com::print(" MCP2 Button1\n");
-                    break;
-            
-      case 2:       Com::print(" MCP2 Button2\n");
-                    break;
-   
-//  and so on 
-   
-      default:      Com::print(" MCP2 no Button\n");
-                    break;
-   }
-
-switch (buttonval3) {
   
-      case 1:       Com::print(" MCP3 Button1\n");
+      //B0     
+      case 1:       action=UI_ACTION_IDENT01;
                     break;
-            
-      case 2:       Com::print(" MCP3 Button2\n");
+      //B1
+      case 2:       action=UI_ACTION_IDENT02;
+                    break;   
+      //B2
+      case 4:       action=UI_ACTION_IDENT03;
+                    break;       
+      //B3
+      case 8:       action=UI_ACTION_IDENT04;
+                    break; 
+      //B4            
+      case 16:      action=UI_ACTION_IDENT05;
+                    break;       
+      //B5
+      case 32:      action=UI_ACTION_IDENT06;
                     break;
-   
-//  and so on 
-   
-      default:      Com::print(" MCP3 no Button\n");
+      //B6
+      case 64:      action=UI_ACTION_IDENT07;
+                    break;
+      //B7      
+      case 128:     action=UI_ACTION_IDENT08;
+                    break;
+     
+      case 256:     action=UI_ACTION_IDENT09;
+                    break; 
+      //A1          
+      case 512:     action=UI_ACTION_IDENT10;
+                    break;
+      //A2
+      case 1024:    action=UI_ACTION_IDENT11;
+                    break;
+      //A3         
+      case 2048:    action=UI_ACTION_IDENT12;
+                    break;      
+      //A4
+      case 4096:    action=UI_ACTION_IDENT13;
+                    break;
+      //A5           
+      case 8192:    action=UI_ACTION_IDENT14;
+                    break;      
+      //A6
+      case 16384:   action=UI_ACTION_IDENT15;
+                    break;
+      //A7      
+      case 32768:   action=UI_ACTION_IDENT16;
+                    break;
+
+      default: 
+
+                    //Com::print(" MCP2 no Button\n");
                     break;
    }
-
+   if(action)
+   {
+    Com::print("action no:"); 
+    Com::print(action);
+    Com::print("\n");
+   }
    return(action);
  }
 
