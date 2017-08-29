@@ -28,7 +28,7 @@
 
 MCP23017 MCP1(0x24);  
 MCP23017 MCP2(0x25);  
-
+MCP23017 MCP3(0x20);  
 
 // if you are not shure about the I2C Adresss of your components run Nick Gammon´s I2C Scanner
 // see:  http://www.gammon.com.au/i2c
@@ -47,6 +47,7 @@ HAL::i2cInit(400000);  // usually 100000 Hz  , my setup works on 400000Hz
 
   MCP1.Init();
   MCP2.Init();
+  MCP3.Init();
  
 }
 
@@ -180,33 +181,49 @@ int Custom_CheckSlowKeys()
   {
 	 uint16_t buttonval = 0xFFFF-MCP1.ReadPort();
 	 uint16_t buttonval2 = 0xFFFF-MCP2.ReadPort();
-	
+	 uint16_t buttonval3 = 0xFFFF-MCP3.ReadPort();
 	    
 switch (buttonval) {
-  
-      case 1:       GCode::executeFString(PSTR("M117 MCP1 Button1"));
+
+      
+      case 1:       Com::print(" MCP1 Button1\n");
                     break;
             
-      case 2:       GCode::executeFString(PSTR("M117 MCP1 Button2"));
+      case 2:       Com::print(" MCP1 Button2\n");
                     break;
    
 // and so on 
    
       default: 
+                    Com::print(" MCP1 no Button\n");
                     break;
    }
    
 switch (buttonval2) {
   
-      case 1:       GCode::executeFString(PSTR("M117 MCP2 Button1"));
+      case 1:       Com::print(" MCP2 Button1\n");
                     break;
             
-      case 2:       GCode::executeFString(PSTR("M117 MCP2 Button2"));
+      case 2:       Com::print(" MCP2 Button2\n");
                     break;
    
 //  and so on 
    
-      default: 
+      default:      Com::print(" MCP2 no Button\n");
+                    break;
+   }
+
+switch (buttonval3) {
+  
+      case 1:       Com::print(" MCP3 Button1\n");
+                    break;
+            
+      case 2:       Com::print(" MCP3 Button2\n");
+                    break;
+   
+//  and so on 
+   
+      default:      Com::print(" MCP3 no Button\n");
                     break;
    }
 
