@@ -65,13 +65,14 @@ void MCP23017::Init(void)
 {
 	_GPIO = 0x0000;
  	_IODIR = 0xFFFF; //set all to inputs
-	_GPPU = 0x0000;
+	_GPPU = 0xFFFF;// activate pullups
 	
    HAL::i2cStartWait(i2c_add + I2C_WRITE);
    HAL::i2cWrite(0x05);
    HAL::i2cWrite(0x00);
    HAL::i2cStop(); 
-	 writeRegister(MCP23017_IODIR, _IODIR);
+   writeRegister(MCP23017_IODIR, _IODIR);
+   writeRegister(MCP23017_GPPU, _GPPU);
 	
 }
 
